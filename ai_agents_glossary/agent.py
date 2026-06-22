@@ -12,12 +12,26 @@ os.environ["HOSTED_VLLM_API_KEY"] = os.getenv("HOSTED_VLLM_API_KEY", "dummy-key"
 
 MODEL_NAME = os.getenv("SV_MODEL_NAME", "hosted_vllm/openai/gpt-oss-20b")
 
+NO_TOOL_CALLING_RULE = """
+IMPORTANT EXECUTION RULE:
+You are writing educational Markdown content only.
+You do not have access to executable tools, functions, APIs, browsers, or external services.
+Never call or invent functions such as search_flights, book_ticket, send_email, web_search, calculator, or any API.
+If you mention a tool/API in an example, describe it in prose only.
+Do not output function_call JSON, tool-call syntax, or code-like API invocations.
+Return plain Markdown text only.
+"""
+
+def safe_instruction(text: str) -> str:
+    return text.strip() + "\n\n" + NO_TOOL_CALLING_RULE.strip()
+
+
 
 term_planner = LlmAgent(
     name="term_planner",
     model=LiteLlm(model=MODEL_NAME),
     output_key="term_plan",
-    instruction="""
+    instruction=safe_instruction("""
 You are the Term Planner.
 
 Create exactly 50 important AI agent-related glossary terms.
@@ -41,7 +55,7 @@ Requirements:
 - Include foundational, intermediate, and advanced concepts.
 - Return only the categorized numbered term list.
 - Do not write definitions yet.
-""",
+"""),
 )
 
 
@@ -49,7 +63,7 @@ definition_writer = LlmAgent(
     name="definition_writer",
     model=LiteLlm(model=MODEL_NAME),
     output_key="definition_draft",
-    instruction="""
+    instruction=safe_instruction("""
 You are the Long-Form Definition Writer.
 
 Using the term plan below, write a polished 500-600 token explanation of what an AI agent is.
@@ -78,7 +92,7 @@ Style requirements:
 - No overly academic language
 
 Return only the definition draft.
-""",
+"""),
 )
 
 
@@ -86,7 +100,7 @@ definition_reviewer = LlmAgent(
     name="definition_reviewer",
     model=LiteLlm(model=MODEL_NAME),
     output_key="definition_review",
-    instruction="""
+    instruction=safe_instruction("""
 You are the Adversarial Reviewer.
 
 Review the AI agent definition below.
@@ -111,7 +125,7 @@ Return a concise review with:
 
 If no major issues remain, say:
 No major issues remain. Only minor stylistic improvements are possible.
-""",
+"""),
 )
 
 
@@ -119,7 +133,7 @@ definition_reviser = LlmAgent(
     name="definition_reviser",
     model=LiteLlm(model=MODEL_NAME),
     output_key="final_definition",
-    instruction="""
+    instruction=safe_instruction("""
 You are the Definition Reviser.
 
 Revise the AI agent definition using the reviewer feedback.
@@ -136,7 +150,7 @@ Requirements:
 - Remove vague wording.
 - Do not mention the review process.
 - Return only the improved final definition.
-""",
+"""),
 )
 
 
@@ -144,7 +158,7 @@ glossary_writer_a = LlmAgent(
     name="glossary_writer_a",
     model=LiteLlm(model=MODEL_NAME),
     output_key="glossary_part_a",
-    instruction="""
+    instruction=safe_instruction("""
 You are Glossary Writer A.
 
 Using the term plan below, write glossary entries for terms 1-25 only.
@@ -174,7 +188,7 @@ Requirements:
 - Preserve the category headings from the term plan.
 - Be beginner-friendly, practical, and technically accurate.
 - Avoid hype and repeated generic explanations.
-""",
+"""),
 )
 
 
@@ -182,7 +196,7 @@ glossary_writer_b = LlmAgent(
     name="glossary_writer_b",
     model=LiteLlm(model=MODEL_NAME),
     output_key="glossary_part_b",
-    instruction="""
+    instruction=safe_instruction("""
 You are Glossary Writer B.
 
 Using the term plan below, write glossary entries for terms 26-50 only.
@@ -212,7 +226,7 @@ Requirements:
 - Preserve the category headings from the term plan.
 - Be beginner-friendly, practical, and technically accurate.
 - Avoid hype and repeated generic explanations.
-""",
+"""),
 )
 
 
@@ -220,7 +234,7 @@ glossary_reviewer = LlmAgent(
     name="glossary_reviewer",
     model=LiteLlm(model=MODEL_NAME),
     output_key="glossary_review",
-    instruction="""
+    instruction=safe_instruction("""
 You are the Adversarial Glossary Reviewer.
 
 Review the combined glossary below.
@@ -252,7 +266,7 @@ Return:
 
 If no major issues remain, say:
 No major issues remain. Only minor stylistic improvements are possible.
-""",
+"""),
 )
 
 
@@ -260,7 +274,7 @@ glossary_reviser = LlmAgent(
     name="glossary_reviser",
     model=LiteLlm(model=MODEL_NAME),
     output_key="final_glossary",
-    instruction="""
+    instruction=safe_instruction("""
 You are the Glossary Reviser.
 
 Revise the combined glossary using the adversarial review feedback.
@@ -285,7 +299,7 @@ Requirements:
 - Fix technical inaccuracies.
 - Do not mention the review process inside the glossary.
 - Return only the improved final glossary.
-""",
+"""),
 )
 
 
@@ -293,7 +307,7 @@ review_summary_writer = LlmAgent(
     name="review_summary_writer",
     model=LiteLlm(model=MODEL_NAME),
     output_key="review_summary_and_self_critique",
-    instruction="""
+    instruction=safe_instruction("""
 You are the Review Summary and Self-Critique Writer.
 
 Using the definition review and glossary review below, write the final two sections.
@@ -329,7 +343,7 @@ Answer:
 - What should a learner study next after reading it?
 
 Use a clear, honest, instructional tone.
-""",
+"""),
 )
 
 
@@ -337,7 +351,7 @@ final_assembler = LlmAgent(
     name="final_assembler",
     model=LiteLlm(model=MODEL_NAME),
     output_key="final_guide",
-    instruction="""
+    instruction=safe_instruction("""
 You are the Final Assembler.
 
 Assemble the final guide using the provided sections.
@@ -372,7 +386,7 @@ Important:
 - Do not show hidden reasoning.
 - Do not mention internal prompts.
 - Return only the polished final guide.
-""",
+"""),
 )
 
 
