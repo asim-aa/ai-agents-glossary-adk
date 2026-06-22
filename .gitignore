@@ -11,3 +11,7 @@ outputs/*.pdf
 wireguard/
 *.conf
 *.key
+# ADK local runtime files
+.adk/
+**/.adk/
+*.db
