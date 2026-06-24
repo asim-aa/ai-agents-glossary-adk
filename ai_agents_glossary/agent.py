@@ -1,6 +1,6 @@
 import os
-
 from dotenv import load_dotenv
+
 from google.adk.agents import LlmAgent, SequentialAgent
 from google.adk.models.lite_llm import LiteLlm
 
@@ -12,20 +12,19 @@ os.environ["HOSTED_VLLM_API_KEY"] = os.getenv("HOSTED_VLLM_API_KEY", "dummy-key"
 
 MODEL_NAME = os.getenv("SV_MODEL_NAME", "hosted_vllm/openai/gpt-oss-20b")
 
-
 NO_TOOL_CALLING_RULE = """
 IMPORTANT EXECUTION RULE:
 You are writing educational Markdown content only.
 You do not have access to executable tools, functions, APIs, browsers, or external services.
 Never call or invent functions such as search_flights, book_ticket, send_email, web_search, calculator, or any API.
-If you mention a tool or API in an example, describe it in prose only.
-Do not output function_call JSON, tool-call syntax, executable code, or code-like API invocations.
+If you mention a tool/API in an example, describe it in prose only.
+Do not output function_call JSON, tool-call syntax, or code-like API invocations.
 Return plain Markdown text only.
 """
 
-
 def safe_instruction(text: str) -> str:
     return text.strip() + "\n\n" + NO_TOOL_CALLING_RULE.strip()
+
 
 
 term_planner = LlmAgent(
@@ -35,84 +34,27 @@ term_planner = LlmAgent(
     instruction=safe_instruction("""
 You are the Term Planner.
 
-Create the final term plan for an AI Agents Glossary and Reference Guide.
+Create exactly 50 important AI agent-related glossary terms.
 
-Return exactly the following 50 terms, organized under exactly these 10 category headings.
-Do not rename categories.
-Do not add or remove terms.
-Do not write definitions yet.
+Organize them into these categories:
 
-### Core AI agent concepts
-1. AI Agent
-2. Agentic System
-3. Autonomy
-4. Goal
-5. Environment
+1. Core AI agent concepts
+2. Agent architecture
+3. Reasoning and planning
+4. Tools and actions
+5. Memory and context
+6. RAG and knowledge systems
+7. Multi-agent systems
+8. Evaluation and safety
+9. Failure modes
+10. Prompt and context engineering
 
-### Agent architecture
-6. Agent Architecture
-7. Agent Loop
-8. State
-9. Policy
-10. Workflow
-
-### Reasoning and planning
-11. Reasoning
-12. Planning
-13. Task Decomposition
-14. Reflection
-15. Decision Boundary
-
-### Tools and actions
-16. Tool Use
-17. Tool Calling
-18. Action Space
-19. API Call
-20. Tool Result
-
-### Memory and context
-21. Context Window
-22. Short-Term Memory
-23. Long-Term Memory
-24. Episodic Memory
-25. State Management
-
-### RAG and knowledge systems
-26. Retrieval-Augmented Generation
-27. Embedding
-28. Vector Database
-29. Retriever
-30. Grounding
-
-### Multi-agent systems
-31. Multi-Agent System
-32. Coordinator Agent
-33. Specialist Agent
-34. Handoff
-35. Consensus
-
-### Evaluation and safety
-36. Evaluation
-37. Test Set
-38. Human-in-the-Loop
-39. Guardrail
-40. Monitoring
-
-### Failure modes
-41. Hallucination
-42. Tool-Use Error
-43. Context Drift
-44. Infinite Loop
-45. Over-Autonomy
-
-### Prompt and context engineering
-46. System Prompt
-47. Prompt Engineering
-48. Context Engineering
-49. Instruction Hierarchy
-50. Few-Shot Example
-
-Return only this categorized numbered term list.
+Requirements:
+- Exactly 50 terms total.
+- Number the terms from 1 to 50.
+- Include foundational, intermediate, and advanced concepts.
+- Return only the categorized numbered term list.
+- Do not write definitions yet.
 """),
 )
 
@@ -159,7 +101,7 @@ definition_reviewer = LlmAgent(
     model=LiteLlm(model=MODEL_NAME),
     output_key="definition_review",
     instruction=safe_instruction("""
-You are the Adversarial Definition Reviewer.
+You are the Adversarial Reviewer.
 
 Review the AI agent definition below.
 
@@ -180,8 +122,6 @@ Return a concise review with:
 1. Major issues found
 2. Required fixes
 3. Whether revision is needed
-
-Maximum length: 250 words.
 
 If no major issues remain, say:
 No major issues remain. Only minor stylistic improvements are possible.
@@ -226,16 +166,9 @@ Using the term plan below, write glossary entries for terms 1-25 only.
 Term plan:
 {term_plan}
 
-You must include only these categories:
-### Core AI agent concepts
-### Agent architecture
-### Reasoning and planning
-### Tools and actions
-### Memory and context
+For each term, use this exact format:
 
-For each term, use this exact Markdown format:
-
-#### Term Name
+## Term Name
 
 **Definition:**  
 Explain the term clearly and accurately. Make it detailed enough to teach the concept.
@@ -252,11 +185,9 @@ Explain a common misunderstanding, mistake, or ambiguity related to the term.
 Requirements:
 - Write terms 1-25 only.
 - Do not write terms 26-50.
-- Preserve the exact category headings listed above.
-- Use exactly 25 terms total.
+- Preserve the category headings from the term plan.
 - Be beginner-friendly, practical, and technically accurate.
-- Avoid hype, repeated generic explanations, and overly long entries.
-- Each entry should be useful but concise.
+- Avoid hype and repeated generic explanations.
 """),
 )
 
@@ -273,16 +204,9 @@ Using the term plan below, write glossary entries for terms 26-50 only.
 Term plan:
 {term_plan}
 
-You must include only these categories:
-### RAG and knowledge systems
-### Multi-agent systems
-### Evaluation and safety
-### Failure modes
-### Prompt and context engineering
+For each term, use this exact format:
 
-For each term, use this exact Markdown format:
-
-#### Term Name
+## Term Name
 
 **Definition:**  
 Explain the term clearly and accurately. Make it detailed enough to teach the concept.
@@ -299,11 +223,9 @@ Explain a common misunderstanding, mistake, or ambiguity related to the term.
 Requirements:
 - Write terms 26-50 only.
 - Do not write terms 1-25.
-- Preserve the exact category headings listed above.
-- Use exactly 25 terms total.
+- Preserve the category headings from the term plan.
 - Be beginner-friendly, practical, and technically accurate.
-- Avoid hype, repeated generic explanations, and overly long entries.
-- Each entry should be useful but concise.
+- Avoid hype and repeated generic explanations.
 """),
 )
 
@@ -327,7 +249,7 @@ Your job is to identify only major issues.
 
 Check for:
 - Whether there are exactly 50 terms
-- Whether all 10 required categories appear
+- Missing required categories
 - Missing important AI agent concepts
 - Weak or vague definitions
 - Technical inaccuracies
@@ -359,6 +281,57 @@ or:
 No major issues remain. Only minor stylistic improvements are possible.
 """),
 )
+
+
+glossary_reviser = LlmAgent(
+    name="glossary_reviser",
+    model=LiteLlm(model=MODEL_NAME),
+    output_key="final_glossary",
+    instruction=safe_instruction("""
+You are the Glossary Reviser.
+
+Revise the combined glossary using the adversarial review feedback.
+
+Glossary part A:
+{glossary_part_a}
+
+Glossary part B:
+{glossary_part_b}
+
+Reviewer feedback:
+{glossary_review}
+
+Requirements:
+- Keep exactly 50 terms total.
+- Preserve the required categories.
+- Preserve the required per-term format.
+- Strengthen weak definitions.
+- Clarify vague wording.
+- Reduce redundancy.
+- Improve examples.
+- Fix technical inaccuracies.
+- Do not mention the review process inside the glossary.
+- Return only the improved final glossary.
+- Organize the final glossary under exactly these 10 category headings:
+  ### Core AI agent concepts
+  ### Agent architecture
+  ### Reasoning and planning
+  ### Tools and actions
+  ### Memory and context
+  ### RAG and knowledge systems
+  ### Multi-agent systems
+  ### Evaluation and safety
+  ### Failure modes
+  ### Prompt and context engineering
+- Every term must use this exact format:
+  #### Term Name
+  **Definition:**
+  **Why it matters:**
+  **Example:**
+  **Common confusion:**
+"""),
+)
+
 
 
 review_summary_writer = LlmAgent(
@@ -408,19 +381,90 @@ Return only sections 3 and 4.
 )
 
 
+final_assembler = LlmAgent(
+    name="final_assembler",
+    model=LiteLlm(model=MODEL_NAME),
+    output_key="final_guide",
+    instruction=safe_instruction("""
+You are the Final Assembler.
+
+Assemble a clean final Markdown guide from these provided sections.
+
+Final definition:
+{final_definition}
+
+Final glossary:
+{final_glossary}
+
+Review summary and self-critique:
+{review_summary_and_self_critique}
+
+CRITICAL FORMAT RULES:
+You must return the final guide using these exact Markdown headings:
+
+# AI Agents Glossary and Reference Guide
+
+## 1. Long-Form Definition of AI Agents
+
+## 2. The 50-Term Glossary
+
+## 3. Adversarial Review Summary
+
+## 4. Final Self-Critique
+
+Do not rename these headings.
+Do not skip any section.
+Do not include intermediate drafts.
+Do not include reviewer scratch notes.
+Do not include hidden reasoning.
+Do not mention internal prompts.
+Do not mention pipeline mechanics.
+
+The glossary section must contain exactly 10 category headings:
+
+### Core AI agent concepts
+### Agent architecture
+### Reasoning and planning
+### Tools and actions
+### Memory and context
+### RAG and knowledge systems
+### Multi-agent systems
+### Evaluation and safety
+### Failure modes
+### Prompt and context engineering
+
+The glossary must contain exactly 50 terms total.
+
+Every glossary term must use this exact format:
+
+#### Term Name
+
+**Definition:**  
+...
+
+**Why it matters:**  
+...
+
+**Example:**  
+...
+
+**Common confusion:**  
+...
+
+Return only the polished final guide in clean Markdown.
+"""),
+)
+
 root_agent = SequentialAgent(
     name="ai_agents_glossary",
-    description=(
-        "A deterministic ADK pipeline that generates and reviews an AI agents "
-        "glossary guide. Python handles final assembly and validation."
-    ),
+    description="A deterministic ADK pipeline that generates, reviews, and assembles an AI agents glossary guide.",
     sub_agents=[
         term_planner,
         definition_writer,
         definition_reviewer,
         definition_reviser,
         glossary_writer_a,
-        glossary_writer_b,
+        glossary_writer_b,   
         glossary_reviewer,
         review_summary_writer,
     ],
