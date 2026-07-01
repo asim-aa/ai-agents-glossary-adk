@@ -15,3 +15,9 @@ wireguard/
 .adk/
 **/.adk/
 *.db
+# Generated candidate/debug outputs
+outputs/*.candidate.md
+outputs/*.failed.md
+
+# Environment/secrets
+.env
